@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "et_g2p_fst"
+version = "0.1.0"
+authors = [
+  { name="Tanel Alumäe", email="tanel.alumae@gmail.com" },
+]
+description = "Estonian G2P FST"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pynini>=2.1.5",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["et_g2p_fst"]
+
+[project.urls]
+"Homepage" = "https://github.com/alumae/et-g2p-fst"
+"Bug Tracker" = "https://github.com/alumae/et-g2p-fst/issues" 

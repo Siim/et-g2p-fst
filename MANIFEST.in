@@ -1,0 +1,5 @@
+include et_g2p_fst/conf/*.txt
+include et_g2p_fst/conf/*.map
+include et_g2p_fst/conf/*.fst
+include README.md
+include LICENSE 

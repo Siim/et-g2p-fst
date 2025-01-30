@@ -167,42 +167,26 @@ def get_transformer():
   return transformer
 
 
-class P2G():
-  def __init__(self, fst_file=None):
-    transformer = get_transformer()
-    self.inverse_transformer = transformer.copy()
-    self.inverse_transformer.invert()
-    self.inverse_transformer.optimize()
-    self.char_lm = None
-    if fst_file is not None:
-      self.char_lm = Fst.read(fst_file)
-      assert self.char_lm.output_symbols(), "No LM output symbol table found"      
-      lm_syms = self.char_lm.output_symbols()      
-      lexicon = [w for (l, w) in lm_syms if l > 0]
-      lexicon_fsa = string_map(lexicon).optimize()
-      self.lm_mapper = string_map(
-        lexicon, input_token_type="byte", output_token_type=lm_syms)
-      self.bytes_to_lm_mapper = self.lm_mapper.closure()
-      self.lm_to_bytes_mapper = invert(self.bytes_to_lm_mapper)      
+class G2P:
+    def __init__(self):
+        self.transformer = get_transformer()
+        
+    def convert(self, word):
+        """Convert graphemes to phonemes."""
+        orig_word = accep(word)
+        lattice = optimize((orig_word @ self.transformer).project('output'))
+        
+        result = []
+        for (i, pronunciation) in enumerate(shortestpath(lattice.project('input'), nshortest=1, unique=True).paths().ostrings()):
+            pronunciation = u" ".join(list(pronunciation))
+            pronunciation = pronunciation.replace(u"š", "sh").replace(u"õ", "ou").replace(u"ä", "ae").replace(u"ö", "oe").replace(u"ü", "ue").replace(u"K", "kk").replace(u"P", "pp").replace(u"T", "tt")
+            result.append(pronunciation)
+        
+        return {
+            "word": word,
+            "phonemes": result[0].split() if result else []
+        }
 
-  def process(self, pron, num_nbest=1):
-    pron = pron.replace("sh", "š").replace("ou", u"õ").replace("ae", "ä").replace("oe", "ö").replace("ue", "ü").replace("kk", "K").replace("pp", "P").replace("tt", "T").replace(" ", "")
-    orig_pron = accep(pron)
-    lattice = (orig_pron @ self.inverse_transformer).project('output')
-    lattice.optimize()
-    if self.char_lm:
-      lattice = rewrite.rewrite_lattice(lattice, self.bytes_to_lm_mapper)
-      lattice = rewrite.rewrite_lattice(lattice, self.char_lm)
-      lattice = rewrite.rewrite_lattice(lattice, self.lm_to_bytes_mapper)        
-      
-    lattice.optimize()
-    
-    shortest_paths = shortestpath(lattice, nshortest=num_nbest, unique=False)
-    result = []
-    for word, weight in zip(shortest_paths.paths().ostrings(), shortest_paths.paths().weights()):
-      result.append((word, weight))
-    return result
-    
 
 if __name__ == '__main__':
 
@@ -215,7 +199,7 @@ if __name__ == '__main__':
   
 
   if args.inverse:
-    p2g = P2G(args.fst)
+    p2g = G2P()
       
     while 1:
       l = sys.stdin.readline()   
